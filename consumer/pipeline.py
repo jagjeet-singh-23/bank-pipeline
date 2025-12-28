@@ -1,6 +1,7 @@
 """
 Data Ingestion Pipeline
 """
+
 from typing import Dict, Any
 import asyncio
 import logging
@@ -15,7 +16,7 @@ from constants import Constants
 
 from consumer.ingestor import KafkaIngestor
 from consumer.uploads import AsyncUploader
-from consumer.storage import MinIOStorage
+from common_services.storage import minio_storage, Storage
 from consumer.retry import DLQProducer
 from consumer.batching import BatchBuffer
 
@@ -28,20 +29,18 @@ logger = logging.getLogger(__name__)
 class DataIngestionPipeline:
     """Data Ingestion Pipeline class."""
 
-    def __init__(self) -> None:
+    def __init__(self, storage: Storage) -> None:
         """Initialize the Data Ingestion pipeline."""
         self.topics: list[str] = [
             "banking_server.public.customers",
             "banking_server.public.accounts",
             "banking_server.public.transactions",
         ]
-        logger.info(
-            "Initializing Data Ingestion Pipeline for topics: %s", self.topics
-        )
+        logger.info("Initializing Data Ingestion Pipeline for topics: %s", self.topics)
         logger.info("Batch size: %s", Constants.BATCH_SIZE)
 
         self.ingestor = KafkaIngestor(self.topics)
-        self.storage = MinIOStorage()
+        self.storage = storage
         self.uploader = AsyncUploader(self.storage)
         self.dlq = DLQProducer()
         self.buffer = BatchBuffer(self.topics, Constants.BATCH_SIZE)
@@ -54,9 +53,7 @@ class DataIngestionPipeline:
         logger.info("Starting Data Ingestion Pipeline...")
         asyncio.create_task(self.uploader.start())
 
-        logger.info(
-            "Started %s async upload workers", Constants.MAX_IN_FLIGHT_UPLOADS
-        )
+        logger.info("Started %s async upload workers", Constants.MAX_IN_FLIGHT_UPLOADS)
 
         logger.info("Waiting for Kafka messages...")
         message_count = 0
@@ -81,20 +78,17 @@ class DataIngestionPipeline:
                     table: str = topic.split(".")[-1]
                     records = self.buffer.flush(topic)
                     logger.info(
-                        "✓ Batch ready for %s: %s records. "
-                        "Submitting for upload...",
+                        "✓ Batch ready for %s: %s records. Submitting for upload...",
                         table,
                         len(records),
                     )
                     await self.uploader.submit(table, records)
 
             except Exception as e:
-                logger.error(
-                    "✗ Error processing message from %s: %s", topic, e
-                )
+                logger.error("✗ Error processing message from %s: %s", topic, e)
                 self.dlq.send(topic, event, e)
 
 
 if __name__ == "__main__":
-    pipeline = DataIngestionPipeline()
+    pipeline = DataIngestionPipeline(storage=minio_storage)
     asyncio.run(pipeline.run())
