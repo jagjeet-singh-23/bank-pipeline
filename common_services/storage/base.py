@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Dict, List
 
 
@@ -17,11 +18,10 @@ class Storage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def download_objects(self, prefix: str) -> List[str]:
+    def download_object(self, bucket: str, key: str, local_path: Path) -> None:
         """Method to download objects from storage.
         Args:
-            prefix (str): Prefix to filter objects.
-        Returns:
-            List[str]: List of objects.
-        """
+            bucket (str): Bucket name.
+            key (str): Object key.
+            local_path (Path): Local path to save the object."""
         raise NotImplementedError

@@ -31,12 +31,31 @@ class Constants:
     MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
     MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
     MINIO_BUCKET = os.getenv("MINIO_BUCKET")
+    MINIO_LOCAL_DIR = os.getenv("MINIO_LOCAL_DIR")
 
+    # DLQ
     DLQ_TOPIC: str = "banking_server.dlq"
 
+    # Batch
     BATCH_SIZE: int = 50
     MAX_IN_FLIGHT_UPLOADS: int = 5
     UPLOAD_QUEUE_SIZE: int = 10
+
+    # Snowflake Credentials
+    SNOWFLAKE_ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT")
+    SNOWFLAKE_USER = os.getenv("SNOWFLAKE_USER")
+    SNOWFLAKE_PASSWORD = os.getenv("SNOWFLAKE_PASSWORD")
+    SNOWFLAKE_WAREHOUSE = os.getenv("SNOWFLAKE_WAREHOUSE")
+    SNOWFLAKE_DATABASE = os.getenv("SNOWFLAKE_DATABASE")
+    SNOWFLAKE_SCHEMA = os.getenv("SNOWFLAKE_SCHEMA")
+
+    # Redis
+    REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+
+    # Extraction Batch Processing
+    MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "50"))
 
 
 __all__ = ["Constants"]

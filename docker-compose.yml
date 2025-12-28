@@ -82,9 +82,14 @@ services:
     depends_on:
       - airflow-scheduler
       - airflow-postgres
+      - redis
+    env_file:
+      - .env
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-postgres:5432/${AIRFLOW_DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./docker/dags:/opt/airflow/dags
       - ./docker/logs:/opt/airflow/logs
@@ -103,9 +108,14 @@ services:
     restart: always
     depends_on:
       - airflow-postgres
+      - redis
+    env_file:
+      - .env
     environment:
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@airflow-postgres:5432/${AIRFLOW_DB_NAME}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./docker/dags:/opt/airflow/dags
       - ./docker/logs:/opt/airflow/logs
@@ -127,9 +137,22 @@ services:
     ports:
       - "5433:5432" # separate from banking-postgres to avoid conflict
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+
 volumes:
   airflow_postgres_data:
   postgres_data:
+  redis_data:
+
 networks:
   default:
     name: banking-mds-net

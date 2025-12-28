@@ -9,5 +9,6 @@ boto3
 kafka-python
 fastparquet
 pandas
+redis
 
 dbt-snowflake

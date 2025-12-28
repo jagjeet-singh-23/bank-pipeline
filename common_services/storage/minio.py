@@ -2,6 +2,7 @@
 MinIO storage class for uploading records to MinIO.
 """
 
+from pathlib import Path
 import logging
 import os
 import uuid
@@ -23,14 +24,17 @@ class MinIOStorage(Storage):
     """
 
     def __init__(self) -> None:
-        self.client = boto3.client(
+        self.client = self._get_s3_client()
+        self.bucket: str = str(Constants.MINIO_BUCKET)
+        self._ensure_bucket()
+
+    def _get_s3_client(self) -> boto3.client:
+        return boto3.client(
             "s3",
             endpoint_url=Constants.MINIO_ENDPOINT,
             aws_access_key_id=Constants.MINIO_ACCESS_KEY,
             aws_secret_access_key=Constants.MINIO_SECRET_KEY,
         )
-        self.bucket: str = str(Constants.MINIO_BUCKET)
-        self._ensure_bucket()
 
     def _ensure_bucket(self) -> None:
         buckets = [b["Name"] for b in self.client.list_buckets()["Buckets"]]
@@ -58,14 +62,13 @@ class MinIOStorage(Storage):
         os.remove(local_file)
         logger.info("✅ Uploaded %s → %s", len(records), s3_key)
 
-    def download_objects(self, prefix: str) -> List[str]:
+    def download_object(self, bucket: str, key: str, local_path: Path) -> None:
         """Method to download objects from MinIO.
         Args:
-            prefix (str): Prefix to filter objects.
-        Returns:
-            List[str]: List of objects.
-        """
-        raise NotImplementedError
+            bucket (str): Bucket name.
+            key (str): Object key.
+            local_path (Path): Local path to save the object."""
+        self.client.download_file(bucket, key, local_path)
 
 
 # Singleton instance of MinIOStorage
